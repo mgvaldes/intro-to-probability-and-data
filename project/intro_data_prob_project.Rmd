@@ -26,18 +26,69 @@ your work.
 load("brfss2013.RData")
 ```
 
+### Introduction
 
+<!-- After your introduction (which can be written later) data section should be fairly straightforward. Something along the lines of “I investigated these questions using the BRFSS dataset. This was collected from POPULATION using METHOD. Results ARE / ARE NOT generalizable to ANOTHER?POPULATION. STATEMENT ABOUT CAUSALITY" is sufficient. (I’m pretty confident you know the answers to fill in those blanks.) You will also need to address potential biases. They don't have to be actually present in the data, but given BRFSS codebook's information you should be able to find 2 or 3 things to keep in mind as you use their data. Do not just copy the BRFSS codebook without rewriting it in your own words and explaining what it means.  -->
+
+<!-- 2 pt for correct reasoning for generabizability – Answer should discuss whether random sampling was used. Learners might discuss any reservations, those should be well justified. -->
+
+<!-- 1 pt for correct reasoning for causality – Answer should discuss whether random assignment was used. -->
 
 * * *
 
 ## Part 1: Data
+The BRFSS dataset is an observational study of data collected from the United States non-institutionalized adult population, aged 18 years or older, all over its 50 states. Data is collected in a state-specific basis, both prospectively (as events unfold) and retrospectively (after events have taken place, monthly data collection). At first they gathered data through surveys made by landline telephone calls; using random digit dialing, asking questions to a randomnly selected adult in the house-hold (random sampling). In a number of states they performed stratified sampling that allowed them to estimate prevalence for regions within their respective states.
 
+I think that targeting only people with landline telephones introduces a source of bias to the sample because they were unable to reach a huge segment of the population without landline telephones. Later in 2008 they introduced cellphone surveys, so they could at least reach people who have cellphones but no landline. I think the latter could introduce duplicates to the data. Also, there is still a small source of bias, since people without both landline and cellphone are excluded from the study.
+
+Since the observational study uses random sampling, results obtained can be generalizable to the United States non-institutionalized adult population, aged 18 years or older. Only correlation/association statements can be generalized to this population. Since there is no random assignment of any treatment to cases, no causal statements can be made about the data.
+
+```{r}
+brfss2013 %>%
+  select(lsatisfy, X_educag, marital, genhlth, scntwrk1, sex, qlstres2, X_chldcnt) %>%
+  str()
+
+## Remark on variable types, mayority categorical other numerical discrete variables.
+```
 
 * * *
 
 ## Part 2: Research questions
+## Q1: Explore retationship between satisfaction with life, education level and marital status.
 
 **Research quesion 1:**
+
+```{r count_lsatisfy}
+brfss2013 %>% 
+  group_by(lsatisfy) %>%
+  summarise(count = n())
+```
+
+```{r count_after_remove_nas_lsatisfy}
+brfss2013 %>% 
+  filter(!is.na(lsatisfy)) %>%
+  group_by(lsatisfy) %>%
+  summarise(count = n())
+```
+
+```{r count_X_educag}
+brfss2013 %>% 
+  group_by(X_educag) %>%
+  summarise(count = n())
+```
+
+```{r count_after_remove_nas_X_educag}
+brfss2013 %>% 
+  filter(!is.na(X_educag)) %>%
+  group_by(X_educag) %>%
+  summarise(count = n())
+```
+
+```{r count_marital}
+brfss2013 %>% 
+  group_by(marital) %>% 
+  summarise(count = n())
+```
 
 **Research quesion 2:**
 
