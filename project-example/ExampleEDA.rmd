@@ -285,6 +285,7 @@ We might also like to refine our question slightly, asking do people above retir
 ```{r groups_from_threshold}
 selected_nzes2011 <- selected_nzes2011 %>% 
   mutate(retiredage = ifelse(jage >= 65, "retired age", "working age"))
+
 selected_nzes2011 %>% 
   group_by(retiredage) %>% 
   summarise(count = n())

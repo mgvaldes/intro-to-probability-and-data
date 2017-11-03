@@ -54,9 +54,11 @@ brfss2013 %>%
 * * *
 
 ## Part 2: Research questions
-## Q1: Explore retationship between satisfaction with life, education level and marital status.
 
 **Research quesion 1:**
+
+## Q1: Explore retationship between satisfaction with life, education level and marital status.
+As a first question we are interested in exploring the relationship between satisfaction with life (`lsatisfy`) and education level (`X_educag`) with respect to different marital status (`marital`). We select the columns of interest and take a closer look at them. All three variables should be categorical and for this particular case we should discard "NA" observations from the analysis since we are interested in people that actually answered to the questions related to each variable.
 
 ```{r count_lsatisfy}
 brfss2013 %>% 
@@ -84,16 +86,122 @@ brfss2013 %>%
   summarise(count = n())
 ```
 
+The marital status categorical variable has too many levels. We'll simplify it and keep only two levels. We'll keep the `Married` level as it is, and merge the rest of the 5 levels as `Not Married`.
+
 ```{r count_marital}
 brfss2013 %>% 
   group_by(marital) %>% 
   summarise(count = n())
 ```
 
+```{r count_after_remove_nas_marital}
+brfss2013 %>% 
+  filter(!is.na(marital)) %>%
+  group_by(marital) %>% 
+  summarise(count = n())
+```
+
+```{r group_marital_levels}
+brfss2013 <- brfss2013 %>% 
+  filter(!is.na(marital)) %>%
+  mutate(simple_marital = ifelse(marital == "Married", "Married", "Not Married"))
+
+brfss2013 %>% 
+  group_by(simple_marital) %>%
+  summarise(count = n())
+```
+
+We'll create a small clean dataset with no missing values, consisting of only the three features we are interested in, related to question 1 of this exploratory analysis. 
+
+```{r create_q1_small_dataset}
+small_brfss2013_q1 <- brfss2013 %>% 
+  select(lsatisfy, X_educag, marital) %>%
+  filter(!is.na(lsatisfy), !is.na(X_educag), !is.na(marital)) %>%
+  mutate(marital = ifelse(marital == "Married", "Married", "Not Married"))
+```
+
 **Research quesion 2:**
+
+## Q2: Explore retationship between general health, hours per week worked and sex.
+The second question is related to exploring the relationship between general health (`genhlth`) and hours per week worked (`scntwrk1`) with respect to gender (`sex`). We become familiar with the features of interest and take a closer look at them. In this case we'll also be discarding "NA" observations from the analysis.
+
+```{r count_genhlth}
+brfss2013 %>% 
+  group_by(genhlth) %>%
+  summarise(count = n())
+```
+
+```{r count_after_remove_nas_genhlth}
+brfss2013 %>% 
+  filter(!is.na(genhlth)) %>%
+  group_by(genhlth) %>%
+  summarise(count = n())
+```
+
+Feature `scntwrk1` has numeric discrete values, so we would want to take a look at numerical summaries such as means, medians, etc. It's important to first filter "NA" values before calculating these measures.
+
+```{r str_scntwrk1}
+str(brfss2013$scntwrk1)
+```
+
+<!-- To do this we can turn the numeric age variable into a categorical variable based on whether people are 65 years or older or younger than 65. Once again we make use of the `mutate()` and `ifelse()` functions -->
+
+```{r numeric_summary_after_remove_nas_scntwrk1}
+brfss2013 %>% 
+  filter(!(is.na(scntwrk1))) %>%
+  summarise(hoursperweekmean = mean(scntwrk1), 
+            hoursperweekmedian = median(scntwrk1), 
+            hoursperweeksd = sd(scntwrk1), 
+            hoursperweekmin = min(scntwrk1), 
+            hoursperweekmax = max(scntwrk1))
+```
+
+We can see the mean value is reasonable, since the most commmon amount of hours of work per week for a regular worker around the world is 40 hours (8 hours a day, 5 days a week). We think the maximum value is a bit too big, but is still a valid number, because is less than 24 hours a day, regardless of the person working 5 or 7 days a week. We also know this value could vary a lot depending on the type of work the person is doing, so we'll asume there are no obvious errors in the data.
+
+```{r count_sex}
+brfss2013 %>% 
+  group_by(sex) %>%
+  summarise(count = n())
+```
+
+```{r count_after_remove_nassex}
+brfss2013 %>% 
+  filter(!is.na(sex)) %>%
+  group_by(sex) %>%
+  summarise(count = n())
+```
+
+We'll again create a small clean dataset with no missing values, consisting of only the three features we are interested, related to question 2 of this exploratory analysis. 
+
+```{r create_q2_small_dataset}
+small_brfss2013_q2 <- brfss2013 %>% 
+  select(genhlth, scntwrk1, sex) %>%
+  filter(!is.na(genhlth), !is.na(scntwrk1), !is.na(sex))
+```
 
 **Research quesion 3:**
 
+## Q3: Explore retationship between anxiety in the past 30 days and number of children in household.
+Last but not least, the third question is related to exploring the relationship between the anxiety in the past 30 days (`qlstres2`) with the number of children in the household (`X_chldcnt`). We take a look at the features of interest and discarding "NA" observations from the analysis if needed.
+
+```{r count_qlstres2}
+brfss2013 %>% 
+  group_by(qlstres2) %>%
+  summarise(count = n())
+```
+
+We can see there is no missing values and that the possible values range from 0 to 10. This variable has stored its values as integers, but since it has a finite small number of possible values we'll transform it to a categorical variable with 10 levels.
+
+```{r as_factor_qlstres2}
+brfss2013 <- brfss2013 %>% 
+  mutate(catqlstres2 = as.factor(qlstres2))
+```
+
+```{r count_catqlstres2}
+brfss2013 %>% 
+  group_by(catqlstres2) %>%
+  summarise(count = n())
+```
 
 * * *
 
