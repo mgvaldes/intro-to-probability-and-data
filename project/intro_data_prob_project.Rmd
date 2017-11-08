@@ -14,6 +14,7 @@ output:
 ```{r load-packages, message = FALSE}
 library(ggplot2)
 library(dplyr)
+library(forcats) # Library used to merge levels of factor variable.
 ```
 
 ### Load data
@@ -37,18 +38,18 @@ load("brfss2013.RData")
 * * *
 
 ## Part 1: Data
-The BRFSS dataset is an observational study of data collected from the United States non-institutionalized adult population, aged 18 years or older, all over its 50 states. Data is collected in a state-specific basis, both prospectively (as events unfold) and retrospectively (after events have taken place, monthly data collection). At first they gathered data through surveys made by landline telephone calls; using random digit dialing, asking questions to a randomnly selected adult in the house-hold (random sampling). In a number of states they performed stratified sampling that allowed them to estimate prevalence for regions within their respective states.
+The BRFSS dataset is an observational study of data collected from the United States non-institutionalized adult population, aged 18 years or older, all over it's 50 states. Data is collected in a state-specific basis, both prospectively (as events unfold) and retrospectively (after events have taken place, i.e. monthly data collection). At first they gathered data through surveys made by landline telephone calls; using random digit dialing, asking questions to a randomnly selected adult in the house-hold (random sampling). In a number of states they performed stratified sampling that allowed them to estimate prevalence for regions within their respective states.
 
 I think that targeting only people with landline telephones introduces a source of bias to the sample because they were unable to reach a huge segment of the population without landline telephones. Later in 2008 they introduced cellphone surveys, so they could at least reach people who have cellphones but no landline. I think the latter could introduce duplicates to the data. Also, there is still a small source of bias, since people without both landline and cellphone are excluded from the study.
 
 Since the observational study uses random sampling, results obtained can be generalizable to the United States non-institutionalized adult population, aged 18 years or older. Only correlation/association statements can be generalized to this population. Since there is no random assignment of any treatment to cases, no causal statements can be made about the data.
 
+Below we show a general overview of the variables of interest for our three research questions. We can see the majority of them are categorical variables and just a pair of them are numerical discrete variables.
+
 ```{r}
 brfss2013 %>%
   select(lsatisfy, X_educag, marital, genhlth, scntwrk1, sex, qlstres2, X_chldcnt) %>%
   str()
-
-## Remark on variable types, mayority categorical other numerical discrete variables.
 ```
 
 * * *
@@ -86,7 +87,7 @@ brfss2013 %>%
   summarise(count = n())
 ```
 
-The marital status categorical variable has too many levels. We'll simplify it and keep only two levels. We'll keep the `Married` level as it is, and merge the rest of the 5 levels as `Not Married`.
+The marital status categorical variable has too many levels. We'll simplify it and keep only two levels. We'll keep the `Married` level as it is, and merge the rest of the 5 levels as `Not Married`. We'll also remove missing values.
 
 ```{r count_marital}
 brfss2013 %>% 
@@ -103,8 +104,8 @@ brfss2013 %>%
 
 ```{r group_marital_levels}
 brfss2013 <- brfss2013 %>% 
-  filter(!is.na(marital)) %>%
-  mutate(simple_marital = ifelse(marital == "Married", "Married", "Not Married"))
+  mutate(simple_marital = ifelse(marital == "Married", "Married", "Not Married")) %>%
+  mutate(simple_marital = as.factor(simple_marital))
 
 brfss2013 %>% 
   group_by(simple_marital) %>%
@@ -115,9 +116,8 @@ We'll create a small clean dataset with no missing values, consisting of only th
 
 ```{r create_q1_small_dataset}
 small_brfss2013_q1 <- brfss2013 %>% 
-  select(lsatisfy, X_educag, marital) %>%
-  filter(!is.na(lsatisfy), !is.na(X_educag), !is.na(marital)) %>%
-  mutate(marital = ifelse(marital == "Married", "Married", "Not Married"))
+  select(lsatisfy, X_educag, simple_marital) %>%
+  filter(!is.na(lsatisfy), !is.na(X_educag), !is.na(simple_marital))
 ```
 
 **Research quesion 2:**
@@ -144,8 +144,6 @@ Feature `scntwrk1` has numeric discrete values, so we would want to take a look 
 str(brfss2013$scntwrk1)
 ```
 
-<!-- To do this we can turn the numeric age variable into a categorical variable based on whether people are 65 years or older or younger than 65. Once again we make use of the `mutate()` and `ifelse()` functions -->
-
 ```{r numeric_summary_after_remove_nas_scntwrk1}
 brfss2013 %>% 
   filter(!(is.na(scntwrk1))) %>%
@@ -156,7 +154,7 @@ brfss2013 %>%
             hoursperweekmax = max(scntwrk1))
 ```
 
-We can see the mean value is reasonable, since the most commmon amount of hours of work per week for a regular worker around the world is 40 hours (8 hours a day, 5 days a week). We think the maximum value is a bit too big, but is still a valid number, because is less than 24 hours a day, regardless of the person working 5 or 7 days a week. We also know this value could vary a lot depending on the type of work the person is doing, so we'll asume there are no obvious errors in the data.
+We can see the mean value is reasonable, since the most commmon amount of hours of work per week for a regular worker is 40 hours (8 hours a day, 5 days a week). We think the maximum value is a bit too big, but is still a valid number, because is less than 24 hours a day, regardless of the person working 5 or 7 days a week. We also know this value could vary a lot depending on the type of work the person is doing, so we'll asume there are no obvious errors in the data.
 
 ```{r count_sex}
 brfss2013 %>% 
@@ -184,23 +182,55 @@ small_brfss2013_q2 <- brfss2013 %>%
 ## Q3: Explore retationship between anxiety in the past 30 days and number of children in household.
 Last but not least, the third question is related to exploring the relationship between the anxiety in the past 30 days (`qlstres2`) with the number of children in the household (`X_chldcnt`). We take a look at the features of interest and discarding "NA" observations from the analysis if needed.
 
+```{r str_qlstres2}
+str(brfss2013$qlstres2)
+```
+
 ```{r count_qlstres2}
 brfss2013 %>% 
   group_by(qlstres2) %>%
   summarise(count = n())
 ```
 
-We can see there is no missing values and that the possible values range from 0 to 10. This variable has stored its values as integers, but since it has a finite small number of possible values we'll transform it to a categorical variable with 10 levels.
+We can see there are several missing values and that the possible values range from 0 to 10. This variable has stored its values as integers, but since it has a finite number of possible values we'll transform it to a categorical variable with 3 levels. We'll merge responses corresponding to values from 0 to 3 into level `Low stress`, values from 4 to 6 into level `Regular stress` and finally values between 7 and 10 into level `High stress`.
 
 ```{r as_factor_qlstres2}
-brfss2013 <- brfss2013 %>% 
-  mutate(catqlstres2 = as.factor(qlstres2))
+# brfss2013 <- brfss2013 %>%
+#   filter(!is.na(qlstres2)) %>%
+#   mutate(stress_past_30d = ifelse(qlstres2 < 4, "Low stress", ifelse(qlstres2 < 7, "Regular stress", "High stress"))) %>%
+#   mutate(catstress_past_30d = as.factor(stress_past_30d))
+
+brfss2013 <- brfss2013 %>%
+  mutate(stress_past_30d = ifelse(qlstres2 < 4, "Low stress", ifelse(qlstres2 < 7, "Regular stress", "High stress"))) %>%
+  mutate(stress_past_30d = as.factor(stress_past_30d))
 ```
 
 ```{r count_catqlstres2}
 brfss2013 %>% 
-  group_by(catqlstres2) %>%
+  filter(!is.na(stress_past_30d)) %>%
+  group_by(stress_past_30d) %>%
   summarise(count = n())
+```
+
+```{r count_X_chldcnt}
+brfss2013 %>% 
+  group_by(X_chldcnt) %>%
+  summarise(count = n())
+```
+
+```{r count_after_remove_nasX_chldcnt}
+brfss2013 %>% 
+  filter(!is.na(X_chldcnt)) %>%
+  group_by(X_chldcnt) %>%
+  summarise(count = n())
+```
+
+Same as we've done for the other two research questions, We'll create a small clean dataset with no missing values, consisting of only the three features we are interested in, related to question 3 of this exploratory analysis. 
+
+```{r create_q3_small_dataset}
+small_brfss2013_q3 <- brfss2013 %>% 
+  select(stress_past_30d, X_chldcnt) %>%
+  filter(!is.na(stress_past_30d), !is.na(X_chldcnt))
 ```
 
 * * *
@@ -214,7 +244,12 @@ in the project you submit. Delete this note when before you submit your work.
 **Research quesion 1:**
 
 ```{r}
-
+ggplot(small_brfss2013_q1, aes(x = lsatisfy, fill = X_educag)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = "Satisfaction with life") +
+  labs(fill = "Education level") +
+  geom_bar(position = "fill") + 
+  facet_wrap( ~ simple_marital, ncol = 2)
 ```
 
 
@@ -222,7 +257,15 @@ in the project you submit. Delete this note when before you submit your work.
 **Research quesion 2:**
 
 ```{r}
-
+small_brfss2013_q2 %>% group_by(genhlth, sex) %>%
+  summarise(hpw_worked_median = mean(scntwrk1)) %>%
+  ggplot(aes(x = genhlth, y = hpw_worked_median, fill = genhlth)) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    labs(x = "General health") +
+    labs(fill = "General health") + 
+    labs(y = "Hours per week worked") +
+    geom_bar(stat = "identity") + 
+    facet_wrap( ~ sex, ncol = 2)
 ```
 
 
@@ -230,6 +273,16 @@ in the project you submit. Delete this note when before you submit your work.
 **Research quesion 3:**
 
 ```{r}
+small_brfss2013_q3 %>%
+  group_by(stress_past_30d, X_chldcnt) %>%
+  summarise(count = n())
+```
 
+```{r}
+ggplot(small_brfss2013_q3, aes(x = X_chldcnt, fill = stress_past_30d)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = "Num. of children in household") +
+  labs(fill = "Level of anxiety in past 30 days") + 
+  geom_bar(position = "fill")
 ```
 
