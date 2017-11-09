@@ -56,9 +56,7 @@ brfss2013 %>%
 
 ## Part 2: Research questions
 
-**Research quesion 1:**
-
-## Q1: Explore retationship between satisfaction with life, education level and marital status.
+### Q1: Explore retationship between satisfaction with life, education level and marital status.
 As a first question we are interested in exploring the relationship between satisfaction with life (`lsatisfy`) and education level (`X_educag`) with respect to different marital status (`marital`). We select the columns of interest and take a closer look at them. All three variables should be categorical and for this particular case we should discard "NA" observations from the analysis since we are interested in people that actually answered to the questions related to each variable.
 
 ```{r count_lsatisfy}
@@ -120,9 +118,15 @@ small_brfss2013_q1 <- brfss2013 %>%
   filter(!is.na(lsatisfy), !is.na(X_educag), !is.na(simple_marital))
 ```
 
-**Research quesion 2:**
+Let's make a quick overview of the datasets again to check they were correctly constructed.
 
-## Q2: Explore retationship between general health, hours per week worked and sex.
+```{r review_q1_small_dataset}
+small_brfss2013_q1 %>%
+  group_by(lsatisfy, X_educag, simple_marital) %>%
+  summarise(count = n())
+```
+
+### Q2: Explore retationship between general health, hours per week worked and sex.
 The second question is related to exploring the relationship between general health (`genhlth`) and hours per week worked (`scntwrk1`) with respect to gender (`sex`). We become familiar with the features of interest and take a closer look at them. In this case we'll also be discarding "NA" observations from the analysis.
 
 ```{r count_genhlth}
@@ -177,9 +181,23 @@ small_brfss2013_q2 <- brfss2013 %>%
   filter(!is.na(genhlth), !is.na(scntwrk1), !is.na(sex))
 ```
 
-**Research quesion 3:**
+Checking the dataset, we can see it was correctly created.
 
-## Q3: Explore retationship between anxiety in the past 30 days and number of children in household.
+```{r review_q2_small_dataset}
+small_brfss2013_q2 %>%
+  group_by(genhlth, sex) %>%
+  summarise(count = n())
+
+small_brfss2013_q2 %>%
+  select(scntwrk1) %>%
+  summarise(hoursperweekmean = mean(scntwrk1), 
+            hoursperweekmedian = median(scntwrk1), 
+            hoursperweeksd = sd(scntwrk1), 
+            hoursperweekmin = min(scntwrk1), 
+            hoursperweekmax = max(scntwrk1))
+```
+
+### Q3: Explore retationship between anxiety in the past 30 days and number of children in household.
 Last but not least, the third question is related to exploring the relationship between the anxiety in the past 30 days (`qlstres2`) with the number of children in the household (`X_chldcnt`). We take a look at the features of interest and discarding "NA" observations from the analysis if needed.
 
 ```{r str_qlstres2}
@@ -233,6 +251,24 @@ small_brfss2013_q3 <- brfss2013 %>%
   filter(!is.na(stress_past_30d), !is.na(X_chldcnt))
 ```
 
+```{r review_q3_small_dataset}
+small_brfss2013_q3 %>%
+  group_by(stress_past_30d, X_chldcnt) %>%
+  summarise(count = n())
+```
+
+We can see that after in the process of creating the third small dataset, there are no samples belonging to the level `Five or more children in household` of categorical variable `X_chldcnt`. We can also see that the last two levels of the same variable (`Three children in household` and `Four children in household`) have very few observations, so we'll proceed to merge them in a single level we'll name `More than two children in household`.
+
+```{r merge_levels_X_chldcnt_q3_dataset}
+small_brfss2013_q3$X_chldcnt <- small_brfss2013_q3$X_chldcnt %>% fct_collapse("More than two children in household" = c("Three children in household", "Four children in household"))
+
+small_brfss2013_q3$X_chldcnt <- factor(small_brfss2013_q3$X_chldcnt)
+
+small_brfss2013_q3 %>%
+  group_by(stress_past_30d, X_chldcnt) %>%
+  summarise(count = n())
+```
+
 * * *
 
 ## Part 3: Exploratory data analysis
@@ -243,7 +279,25 @@ in the project you submit. Delete this note when before you submit your work.
 
 **Research quesion 1:**
 
-```{r}
+```{r q1_graph1}
+ggplot(small_brfss2013_q1, aes(x = lsatisfy, fill = X_educag)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = "Satisfaction with life") +
+  labs(fill = "Education level") +
+  geom_bar(position = "fill")
+```
+
+```{r q1_contingency_table}
+q1table <- table(small_brfss2013_q1$lsatisfy, small_brfss2013_q1$X_educag)
+margin.table(q1table, 1) # row sums (lsatisfy)
+margin.table(q1table, 2) # column sums (X_educag)
+
+prop.table(q1table)
+prop.table(q1table, 1) # row sums (lsatisfy)
+prop.table(q1table, 2) # column sums (X_educag)
+```
+
+```{r q1_graph2}
 ggplot(small_brfss2013_q1, aes(x = lsatisfy, fill = X_educag)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(x = "Satisfaction with life") +
@@ -253,6 +307,22 @@ ggplot(small_brfss2013_q1, aes(x = lsatisfy, fill = X_educag)) +
 ```
 
 
+# ```{r algo}
+# ```
+
+<!-- Since the proportion of spam changes across the groups in Figure 1.39(b), we can conclude the variables are dependent, which is something we were also able to discern using table proportions. -->
+
+<!-- I think the idea is that your hypothesis (relationship) appears to be true, but in reality there is a confounding variable which might be the real explanation. For example: -->
+
+<!-- Hypothesis: older people are less happy. -->
+
+<!-- EDA to undertake: describe relationship between age and happiness rating. -->
+
+<!-- Posslbe conclusion: older people do seem to be less happy. -->
+
+<!-- Confounding (third) variable: older people are more likely to be female than male. -->
+
+<!-- Further investigation: are females less happy than males? If yes, can this explain the previous conclusion? -->
 
 **Research quesion 2:**
 
